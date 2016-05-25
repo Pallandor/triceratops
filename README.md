@@ -1,7 +1,7 @@
 [![Stories in Ready](https://badge.waffle.io/HRR16-triceratops/triceratops.png?label=ready&title=Ready)](https://waffle.io/HRR16-triceratops/triceratops)
 # Project Name
 Hot-Tub Tonight
-> Pithy project description
+> Pithy project description.
 
 ## Team
 
