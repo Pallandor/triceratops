@@ -4,7 +4,7 @@ import { updateFormField } from '../actions/index';
 import { addNewListing } from '../actions/index'; 
 
 // ADD STATE MANAGEMENT REDUCERS.
-// then add others. 
+// then add others. Check it. 
 
 const AddNewListingForm = (props) => {
 	const { dispatch, fields, isAttemptingToAdd } = props;
