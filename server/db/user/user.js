@@ -16,6 +16,12 @@ var UserSchema = new Schema({
     type: String,
     required: true
   },
+  purchasedProducts: [
+    {
+      productID: String,
+      token: Object
+    }
+  ],
   displayName: {
     type: String,
     required: true

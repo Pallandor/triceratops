@@ -1,21 +1,23 @@
 var Product = require('../../db/product/product.js');
+var User = require('../../db/user/user.js');
 var express = require('express');
 var expressJwt = require('express-jwt');
 var router = express.Router();
 var secret = process.env.JWT_SECRET || 'sleepingpuppies';
+var stripe = require("stripe")("sk_test_Nuaw72y1EN1zGxmj41r0f4KW");
 
 /**
  *  Request Handler for GET(read) Method
  *  @expected data with Req - nothing
  *  @return {Array} - Array of every product Object
  */
-router.get('/', function(req, res){
-  Product.find({}).then(function (docs) {
-    res.send(docs);
-  }).catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.get('/', function(req, res) {
+    Product.find({}).then(function(docs) {
+        res.send(docs);
+    }).catch(function(err) {
+        console.log(err);
+        res.status(404).send('DatabaseError');
+    });
 });
 
 /**
@@ -23,13 +25,13 @@ router.get('/', function(req, res){
  *  @expected data with Req - nothing
  *  @return {Object} - Object of matching product
  */
-router.get('/:id', function(req, res){
-  Product.findById(req.params.id).then(function (doc) {
-    res.send(doc);
-  }).catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.get('/:id', function(req, res) {
+    Product.findById(req.params.id).then(function(doc) {
+        res.send(doc);
+    }).catch(function(err) {
+        console.log(err);
+        res.status(404).send('DatabaseError');
+    });
 });
 
 /**
@@ -37,13 +39,13 @@ router.get('/:id', function(req, res){
  *  @expected data with Req - nothing
  *  @return [{Object}, {Object}] - Array of comment objects for this product
  */
-router.get('/comments/:id', function(req, res){
-  Product.findById(req.params.id).then(function (doc) {
-    res.send(doc.comments);
-  }).catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.get('/comments/:id', function(req, res) {
+    Product.findById(req.params.id).then(function(doc) {
+        res.send(doc.comments);
+    }).catch(function(err) {
+        console.log(err);
+        res.status(404).send('DatabaseError');
+    });
 });
 
 /**
@@ -52,29 +54,29 @@ router.get('/comments/:id', function(req, res){
  *  @expected Header with Req - { "Authorization": "Bearer <JWT_TOKEN>"}
  *  @return {Object} - contains every data including timestamps, ObjectId, isActivated
  */
-router.post('/', expressJwt({secret: secret}), function(req, res){
-  var prod = req.body;
-  var newProduct = new Product({
-    type: prod.type,
-    title: prod.title,
-    imgURL: prod.imgURL,
-    summary: prod.summary,
-    description: prod.description,
-    price: prod.price,
-    locationInfo: prod.locationInfo,
-    author: prod.author,
-    availableFrom: prod.availableFrom,
-    availableTo: prod.availableTo,
-    rentSchedule: [],
-    isActivated: true
-  });
+router.post('/', expressJwt({ secret: secret }), function(req, res) {
+    var prod = req.body;
+    var newProduct = new Product({
+        type: prod.type,
+        title: prod.title,
+        imgURL: prod.imgURL,
+        summary: prod.summary,
+        description: prod.description,
+        price: prod.price,
+        locationInfo: prod.locationInfo,
+        author: prod.author,
+        availableFrom: prod.availableFrom,
+        availableTo: prod.availableTo,
+        rentSchedule: [],
+        isActivated: true
+    });
 
-  newProduct.save().then(function (doc) {
-    res.send(doc);
-  }).catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+    newProduct.save().then(function(doc) {
+        res.send(doc);
+    }).catch(function(err) {
+        console.log(err);
+        res.status(404).send('DatabaseError');
+    });
 });
 
 /**
@@ -83,15 +85,15 @@ router.post('/', expressJwt({secret: secret}), function(req, res){
  *                            2. Complete product data including the field need to be updated(req.body)
  *  @expected Header with Req - { "Authorization": "Bearer <JWT_TOKEN>"}
  */
-router.put('/:id', expressJwt({secret: secret}), function(req, res){
-  var id = req.params.id;
-  var prod = req.body;
-  Product.findByIdAndUpdate(id, prod).then(function () {
-    res.end();
-  }).catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.put('/:id', expressJwt({ secret: secret }), function(req, res) {
+    var id = req.params.id;
+    var prod = req.body;
+    Product.findByIdAndUpdate(id, prod).then(function() {
+        res.end();
+    }).catch(function(err) {
+        console.log(err);
+        res.status(404).send('DatabaseError');
+    });
 });
 
 /**
@@ -102,23 +104,56 @@ router.put('/:id', expressJwt({secret: secret}), function(req, res){
  *  @expected Header with Req - { "Authorization": "Bearer <JWT_TOKEN>"}
  *  @return {Object} - contains all product data including updated rentSchedule
  */
-router.put('/rent/:id', expressJwt({secret: secret}), function(req, res){
-  var id = req.params.id;
-  var update = req.body;
-  Product.findById(id).then(function(found){
-    return found.rentalUpdate(update);
-  })
-  .then(function(updated){
-    return updated.save();
-  })
-  .then(function(saved){
-    res.json(saved);
-  })
-  .catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.put('/rent/:id', expressJwt({ secret: secret }), function(req, res) {
+
+    // NOTE - NEED TO DELAY THIS UNTIL AFTER THE PAYMENT HAS BEEN SUCCESSFULLY PROCESSED... 
+    var id = req.params.id;
+    var update = req.body;
+
+    Product.findById(id).then(function(found) {
+            return found.rentalUpdate(update);
+        })
+        .then(function(updated) {
+            return updated.save();
+        })
+        .then(function(saved) {
+            res.json(saved);
+        })
+        .catch(function(err) {
+            console.log(err);
+            res.status(404).send('DatabaseError');
+        });
 });
+
+/**
+ *  Request Handler for POST(payment and update of User db) Method with JWT verification middleware
+ *  @expected data with Req - 1. All transaction information in req.body as { product, user, stripeToken }
+ *  @expected Header with Req - { "Authorization": "Bearer <JWT_TOKEN>"}
+ *  @return {Object} - contains all product data including updated rentSchedule
+ */
+router.post('/stripe', expressJwt({ secret: secret }), function(req, res) {
+    var transaction = req.body;
+    User.findOne({ username: transaction.user.username }, function(err, doc) {
+        if (err) throw err;
+        stripe.charges.create({
+            amount: (transaction.product.price * 100),
+            currency: "USD",
+            source: transaction.stripeToken.id,
+            description: transaction.product.title
+        }, function(err, charge) {
+            if (err) throw err;
+            doc.purchasedProducts.push({ productID: transaction.product._id, token: transaction.stripeToken });
+            doc.save(function(err) {
+                if (err) {
+                    throw err;
+                } else {
+                    res.status(200).send('Payment successfully processed by ShareAnything Inc!');
+                }
+            });
+        });
+    });
+});
+
 
 /**
  *  Request Handler for PUT(add comment) Method with JWT verification middleware
@@ -127,22 +162,22 @@ router.put('/rent/:id', expressJwt({secret: secret}), function(req, res){
  *  @expected Header with Req - { "Authorization": "Bearer <JWT_TOKEN>"}
  *  @return {Object} - contains all comments for given product id.
  */
-router.put('/comments/:id', expressJwt({secret: secret}), function(req, res){
-  var id = req.params.id;
-  var update = req.body;
-  Product.findById(id).then(function(found){
-    return found.addComment(update);
-  })
-  .then(function(updated){
-    return updated.save();
-  })
-  .then(function(saved){
-    res.json(saved);
-  })
-  .catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.put('/comments/:id', expressJwt({ secret: secret }), function(req, res) {
+    var id = req.params.id;
+    var update = req.body;
+    Product.findById(id).then(function(found) {
+            return found.addComment(update);
+        })
+        .then(function(updated) {
+            return updated.save();
+        })
+        .then(function(saved) {
+            res.json(saved);
+        })
+        .catch(function(err) {
+            console.log(err);
+            res.status(404).send('DatabaseError');
+        });
 });
 
 /**
@@ -150,14 +185,14 @@ router.put('/comments/:id', expressJwt({secret: secret}), function(req, res){
  *  @expected data with Req - nothing
  *  @return {Object} - Object of matching product
  */
-router.delete('/:id', expressJwt({secret: secret}), function(req, res){
-  var id = req.params.id;
-  Product.findByIdAndRemove(id).then(function (doc) {
-    res.send(doc);
-  }).catch(function (err) {
-    console.log(err);
-    res.status(404).send('DatabaseError');
-  });
+router.delete('/:id', expressJwt({ secret: secret }), function(req, res) {
+    var id = req.params.id;
+    Product.findByIdAndRemove(id).then(function(doc) {
+        res.send(doc);
+    }).catch(function(err) {
+        console.log(err);
+        res.status(404).send('DatabaseError');
+    });
 });
 
 

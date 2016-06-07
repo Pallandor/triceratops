@@ -9,6 +9,7 @@ import Dialog from 'material-ui/Dialog';
 import FlatButton from 'material-ui/FlatButton';
 import MapComponenet from './Map.js';
 import CommentList from './CommentList';
+import PaymentForm from './PaymentForm';
 
 class ItemDetailComponent extends Component {
   constructor(props){
@@ -39,8 +40,7 @@ class ItemDetailComponent extends Component {
             <p><b>Details: </b>{item.description}</p>
             <h3>${item.price}.00</h3>
             {item.author && item.author.username !== user.username &&
-              <RentDateComponenet />
-            }
+              <RentDateComponenet />}
             <p></p>
             <div id="map-container">
             {item.locationInfo ?
@@ -57,18 +57,17 @@ class ItemDetailComponent extends Component {
             <Dialog
               actions={
                 <FlatButton
-                  label="Ok"
+                  label="Cancel"
                   primary={true}
                   onClick={popupClose}
                 />
               }
+              autoScrollBodyContent={true}
               modal={false}
               open={ui.popup.open}
               onRequestClose={popupClose}
             >
-              {/* what else can go in here? */}
-              {/* ui.popup.content */}
-              
+              <PaymentForm product={item} user={user}/>
             </Dialog>
           </div>
         </div>
