@@ -66,7 +66,9 @@ class ItemDetailComponent extends Component {
               open={ui.popup.open}
               onRequestClose={popupClose}
             >
-              {ui.popup.content}
+              {/* what else can go in here? */}
+              {/* ui.popup.content */}
+              
             </Dialog>
           </div>
         </div>

@@ -1,5 +1,5 @@
 var mongoose = require('../db.js');
-var bcrypt = require('bcrypt');
+var bcrypt = require('bcryptjs');
 var Promise = require('bluebird');
 
 var Schema = mongoose.Schema;
