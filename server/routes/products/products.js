@@ -35,6 +35,32 @@ router.get('/:id', function(req, res) {
 });
 
 /**
+ *  Request Handler for GET(read) Method
+ *  @expected data with Req - nothing
+ *  @return {Array} - Array of product blobs that match query 
+ */
+router.get('/search/:queryString', function(req, res) {
+
+    var queryString = req.params.queryString; 
+
+    // check if location provided too! 
+    
+
+    // just return full products list for now. 
+    Product.find({}, function(err,docs){
+        if (err) throw err; 
+        res.send(docs); // or res.json(docs) ?? 
+    });
+
+    // Product.findById(req.params.query).then(function(doc) {
+    //     res.send(doc);
+    // }).catch(function(err) {
+    //     console.log(err);
+    //     res.status(404).send('DatabaseError');
+    // });
+});
+
+/**
  *  Request Handler for GET(read) Method to get comment of specific product
  *  @expected data with Req - nothing
  *  @return [{Object}, {Object}] - Array of comment objects for this product
